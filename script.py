@@ -23,5 +23,21 @@ def map_plot():
                 obstacles.append(tuple((x,y)))
     plt.show()
     return obstacles
-obstacle_space = map_plot()
+# obstacle_space = map_plot()
 
+# To get initial state from the user
+def input_initial_state():
+    input_node = input('Enter the initial state : ')
+    input_node = tuple(int(i) for i in input_node.split(" "))
+    print(input_node)
+    return input_node
+
+# To get goal state from the user
+def input_goal_state():
+    goal_node = input('Enter the initial state : ')
+    goal_node = tuple(int(j) for j in goal_node.split(" "))
+    print(goal_node)
+    return goal_node
+
+node_state_i = input_initial_state()
+node_state_g = input_goal_state()
