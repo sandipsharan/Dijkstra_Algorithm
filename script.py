@@ -3,9 +3,8 @@ import copy
 from matplotlib import pyplot as plt
 from queue import PriorityQueue
 import time
+
 start_time = time.time()
-
-
 queue_nodes = PriorityQueue()
 path_dict = {}
 visited_nodes = []
@@ -81,6 +80,9 @@ def input_initial_state():
     if input_node[0] > 600 or input_node[1] > 250:
         print('The input node is not in the limits')
         input_initial_state()
+    if input_node[0] < 0 or input_node[1] < 0:
+        print('The input node is not in the limits')
+        input_initial_state()
     return input_node
 
 # To get goal state from the user
@@ -93,6 +95,9 @@ def input_goal_state():
         input_goal_state()
     if goal_node[0] > 600 or goal_node[1] > 250:
         print('The goal node is not in the limits')
+        input_goal_state()
+    if goal_node[0] < 0 or goal_node[1] < 0:
+        print('The input node is not in the limits')
         input_goal_state()
     return goal_node
 
@@ -305,9 +310,29 @@ def ActionMoveDownLeft(pos, queue, goal):
             path_dict[queue_child] = queue_parent
     return 
 
+# For back tracking to initial position
+def back_tracking(path, initial_state, pre_queue):
+    queue_pop_tup = pre_queue[3]
+    queue_pop_initial = initial_state[3]
+    best_path.append(queue_pop_tup)
+    parent_node = path[queue_pop_tup]
+    best_path.append(parent_node)
+    # Finding the parent of parent to back track
+
+    while parent_node != queue_pop_initial:  
+        parent_node = path[parent_node]
+        best_path.append(parent_node)
+        if pre_queue == queue_pop_initial:
+            parent_node = path[queue_pop_tup]
+            best_path.append(parent_node)
+            break
+    best_path.reverse()
+    print("Path Taken: ")
+    for i in best_path:
+        print(i)
+    return best_path
 
 obstacle_space = map_plot()
-
 initial_input = input_initial_state()
 node_state_i = (0, 0, 0, (initial_input))
 node_state_g = input_goal_state()
@@ -338,9 +363,8 @@ while True:
     else:
         print("Goal Reached: ", node_state_g)
         break
+
 plt.show()
 end_time = time.time()
-
-# get the execution time
 elapsed_time = end_time - start_time
 print('Execution time:', elapsed_time, 'seconds')
