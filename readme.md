@@ -17,6 +17,13 @@
 ```
 pip install pygame
 ```
+### `VidMaker`
+
+<br />To install vidmaker, type the following command in the terminal
+
+```
+pip install vidmaker
+```
 
 ## Git Repo Link 
 
