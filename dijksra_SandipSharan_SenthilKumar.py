@@ -4,7 +4,7 @@ import vidmaker
 import pygame
 
 
-start_time = time.time()
+start = time.time()
 queue_nodes = PriorityQueue()
 path_dict = {}
 visited_nodes = []
@@ -20,13 +20,13 @@ def flip_coords(points, h):
 def flip_coords_rect(points, h, obj_h):
     return (points[0], h - points[1] - obj_h)
 
-# Function for    
+# Function for visualization
 def game(explored, optimal_path):
     pygame.init()
     surface = pygame.display.set_mode((600,250))
     color_1 = "skyblue"
     color_2 = "teal"
-    running = True
+    Condition = True
     # video = vidmaker.Video("Path_planner.mp4", late_export=True)
     clock = pygame.time.Clock()
 
@@ -60,10 +60,10 @@ def game(explored, optimal_path):
     original_hexagon_5 = flip_coords([300,200], 250)
     original_hexagon_6 = flip_coords([235,162.5], 250)
 
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    while Condition:
+        for loop in pygame.event.get():
+            if loop.type == pygame.QUIT:
+                Condition = False
 
         pygame.draw.rect(surface, color_2, pygame.Rect(clearance_rect_down[0], clearance_rect_down[1], 60, 105))
         pygame.draw.rect(surface, color_2, pygame.Rect(clearance_rect_up[0], clearance_rect_up[1], 60, 105))
@@ -94,11 +94,11 @@ def game(explored, optimal_path):
             clock.tick(10)
         pygame.display.flip()
         pygame.time.wait(3000)
-        running = False
+        Condition = False
     pygame.quit()
     # video.export(verbose=True)
 
-
+# Function for finding obstacles
 def map_plot():
     obstacle = []
     for x in range (0,601, 1):
@@ -125,17 +125,19 @@ def map_plot():
     return obstacle
 
 # To get initial state from the user
-def input_initial_state():
+def input_initial_state(check):
     input_node = input('Enter the initial state with space : ')
     input_node = tuple(int(i) for i in input_node.split(" "))
     print(input_node)
-    if input_node in obstacle_space:
-        print('The given node is in obstacle space')
-        input_initial_state()
-    if input_node[0] > 600 or input_node[1] > 250 or input_node[0] < 0 or input_node[1] < 0:
-        print('The input node is not in the limits')
-        input_initial_state()
-    return input_node
+    while not check: 
+        if input_node in obstacle_space or input_node[0] > 600 or input_node[1] > 250 or input_node[0] < 0 or input_node[1] < 0:
+            print('The input node is not in the free space')
+            input_node = input('Enter the initial state with space : ')
+            input_node = tuple(int(i) for i in input_node.split(" "))
+            print(input_node)
+        else:
+            return input_node
+    
 
 
 # To get goal state from the user
@@ -143,200 +145,190 @@ def input_goal_state():
     goal_node = input('Enter the goal state with space : ')
     goal_node = tuple(int(j) for j in goal_node.split(" "))
     print(goal_node)
-    if goal_node in obstacle_space:
-        print('The given node is in obstacle space')
-        input_goal_state()
-    if goal_node[0] > 600 or goal_node[1] > 250 or goal_node[0] < 0 or goal_node[1] < 0:
-        print('The goal node is not in the limits')
-        input_goal_state()
-    return goal_node
+    while not check: 
+        if goal_node in obstacle_space or goal_node[0] > 600 or goal_node[1] > 250 or goal_node[0] < 0 or goal_node[1] < 0:
+            print('The goal node is not in the free space')
+            goal_node = input('Enter the goal state with space : ')
+            goal_node = tuple(int(i) for i in goal_node.split(" "))
+            print(goal_node)
+        else:
+            return goal_node
 
 # To move up
-def ActionMoveUp(pos, queue, goal):
+def ActionMoveUp(pos, queue):
     global index
-    if queue != goal: 
-        current_position = (pos[0], pos[1]+1)
-        cost2_come = queue[0] +1
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0], pos[1]+1)
+    cost2_come = queue[0] +1
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # To move down
-def ActionMoveDown(pos, queue, goal):
+def ActionMoveDown(pos, queue):
     global index
-    if queue != goal:
-        current_position = (pos[0], pos[1]-1)
-        cost2_come = queue[0] +1
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0], pos[1]-1)
+    cost2_come = queue[0] +1
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # To move right
-def ActionMoveRight(pos, queue, goal):
+def ActionMoveRight(pos, queue):
     global index
-    if queue != goal:
-        current_position = (pos[0]+1, pos[1])
-        cost2_come = queue[0] +1
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0]+1, pos[1])
+    cost2_come = queue[0] +1
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # To move left
-def ActionMoveLeft(pos, queue, goal):
+def ActionMoveLeft(pos, queue):
     global index
-    if queue != goal:
-        current_position = (pos[0]-1, pos[1])
-        cost2_come = queue[0] +1
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[current_position] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0]-1, pos[1])
+    cost2_come = queue[0] +1
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[current_position] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # To move up and right diagonally
-def ActionMoveUpRight(pos, queue, goal):
+def ActionMoveUpRight(pos, queue):
     global index
-    if queue != goal:
-        current_position = (pos[0]+1, pos[1]+1)
-        cost2_come = queue[0] + 1.4
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0]+1, pos[1]+1)
+    cost2_come = queue[0] + 1.4
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # To move up and left diagonally
-def ActionMoveUpLeft(pos, queue, goal):
+def ActionMoveUpLeft(pos, queue):
     global index
-    if queue != goal:
-        current_position = (pos[0]-1, pos[1]+1)
-        cost2_come = queue[0] + 1.4
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0]-1, pos[1]+1)
+    cost2_come = queue[0] + 1.4
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # To move down and right diagonally
-def ActionMoveDownRight(pos, queue, goal):
+def ActionMoveDownRight(pos, queue):
     global index
-    if queue != goal:
-        current_position = (pos[0]+1, pos[1]-1)
-        cost2_come = queue[0] + 1.4
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = pos
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            path_dict[current_position] = pos
+    current_position = (pos[0]+1, pos[1]-1)
+    cost2_come = queue[0] + 1.4
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 
 # To move down and left diagonally
-def ActionMoveDownLeft(pos, queue, goal):
+def ActionMoveDownLeft(pos, queue):
     global index
-    if queue != goal:
-        node_position = pos
-        current_position = (pos[0]-1, pos[1]-1)
-        cost2_come = queue[0] + 1.4
-        index += 1
-        parent_node = queue[1]
-        node = (cost2_come, index, parent_node, current_position)
-        if current_position not in visited_nodes and current_position not in obstacle_space:
-            for i in range(queue_nodes.qsize()):
-                if queue_nodes.queue[i][3] == current_position:
-                    if queue_nodes.queue[i][0] > cost2_come:
-                        index += 1
-                        queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
-                        path_dict[queue_nodes.queue[i][3]] = node_position
-                        return
-                    else:
-                        return
-            queue_nodes.put(node)
-            queue_parent = node_position
-            queue_child = current_position
-            path_dict[queue_child] = queue_parent
+    current_position = (pos[0]-1, pos[1]-1)
+    cost2_come = queue[0] + 1.4
+    index += 1
+    parent_node = queue[1]
+    node = (cost2_come, index, parent_node, current_position)
+    if current_position not in visited_nodes and current_position not in obstacle_space:
+        for i in range(queue_nodes.qsize()):
+            if queue_nodes.queue[i][3] == current_position:
+                if queue_nodes.queue[i][0] > cost2_come:
+                    index += 1
+                    queue_nodes.queue[i] = (cost2_come, index, parent_node, current_position)
+                    path_dict[queue_nodes.queue[i][3]] = pos
+                    return
+                else:
+                    return
+        queue_nodes.put(node)
+        path_dict[current_position] = pos
     return 
 
 # For back tracking to initial position
@@ -346,8 +338,8 @@ def back_tracking(path, initial_state, pre_queue):
     best_path.append(queue_pop_tup)
     parent_node = path[queue_pop_tup]
     best_path.append(parent_node)
-    # Finding the parent of parent to back track
 
+    # Finding the parent of parent to back track
     while parent_node != queue_pop_initial:  
         parent_node = path[parent_node]
         best_path.append(parent_node)
@@ -363,7 +355,8 @@ def back_tracking(path, initial_state, pre_queue):
 
 
 obstacle_space = map_plot()
-initial_input = input_initial_state()
+check = False
+initial_input = input_initial_state(check)
 node_state_i = (0, 0, 0, (initial_input))
 node_state_g = input_goal_state()
 queue_nodes.put(node_state_i)
@@ -375,28 +368,29 @@ while True:
     x, y = position
     if position != node_state_g:
         if y+1 <= 250:
-            ActionMoveUp(position,queue_pop, node_state_g)
+            ActionMoveUp(position,queue_pop)
         if y-1 >= 0:
-            ActionMoveDown(position,queue_pop, node_state_g)
+            ActionMoveDown(position,queue_pop)
         if x+1 <= 600:
-            ActionMoveRight(position,queue_pop, node_state_g)
+            ActionMoveRight(position,queue_pop)
         if x-1 >= 0:
-            ActionMoveLeft(position,queue_pop, node_state_g)
+            ActionMoveLeft(position,queue_pop)
         if (x+1) <= 600 and (y+1) <= 250:
-            ActionMoveUpRight(position,queue_pop, node_state_g)
+            ActionMoveUpRight(position,queue_pop)
         if (x-1) >= 0 and (y+1) <= 250:
-            ActionMoveUpLeft(position,queue_pop, node_state_g)
+            ActionMoveUpLeft(position,queue_pop)
         if (x+1) <= 600 and (y-1) >= 0:
-            ActionMoveDownRight(position,queue_pop, node_state_g)
+            ActionMoveDownRight(position,queue_pop)
         if (x-1) >= 0 and (y-1) >= 0:
-            ActionMoveDownLeft(position,queue_pop, node_state_g)
+            ActionMoveDownLeft(position,queue_pop)
     else:
         d = back_tracking(path_dict, node_state_i, queue_pop)
         print("Goal Reached: ", node_state_g)
         break
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-print('Execution time:', elapsed_time, 'seconds')
+end = time.time()
+Total_time = end - start
+print('Execution time:', Total_time, 'seconds')
 game(visited_nodes, best_path)
+
 
